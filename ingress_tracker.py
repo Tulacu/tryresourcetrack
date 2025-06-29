@@ -22,15 +22,26 @@ import base64
 class IngressHackTracker:
     def load_from_csv(self, file_stream) -> int:
         """
-        從檔案流匯入 CSV 資料，回傳成功匯入的筆數
+        從檔案流匯入 CSV 資料，回傳成功匯入的筆數，並自動轉換成 UTF-8
         """
         import io
+        content = None
         if hasattr(file_stream, 'read'):
-            content = file_stream.read()
-            if isinstance(content, bytes):
-                content = content.decode('utf-8-sig')
-            else:
-                content = str(content)
+            raw = file_stream.read()
+            # 嘗試多種編碼
+            for encoding in ['utf-8-sig', 'utf-8', 'big5', 'cp950']:
+                try:
+                    content = raw.decode(encoding)
+                    # 若不是 utf-8，則自動轉存 utf-8
+                    if encoding not in ['utf-8', 'utf-8-sig']:
+                        # 重新以 utf-8 儲存一份
+                        with open('last_uploaded_utf8.csv', 'w', encoding='utf-8') as f:
+                            f.write(content)
+                    break
+                except Exception:
+                    continue
+            if content is None:
+                raise ValueError("CSV 檔案編碼無法辨識，請另存為 UTF-8 再上傳")
         else:
             content = str(file_stream)
         return self.load_from_csv_content(content)
