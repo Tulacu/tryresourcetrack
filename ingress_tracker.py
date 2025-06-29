@@ -524,7 +524,11 @@ class IngressHackTracker:
                     if header == 'timestamp':
                         record[header] = values[i].strip()
                     else:
-                        record[header] = int(values[i]) if values[i].strip() else 0
+                        v = values[i].strip()
+                        try:
+                            record[header] = int(float(v)) if v else 0
+                        except Exception:
+                            record[header] = 0
                 imported_data.append(record)
         # 合併資料（避免重複）
         existing_timestamps = {r['timestamp'] for r in self.hack_data}
