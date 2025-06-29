@@ -24,7 +24,12 @@ CORS(app, origins="https://tulacu.github.io", supports_credentials=True)
 
 # 創建一個全域的 tracker 實例。在真實的多人應用中，你可能需要為每個用戶管理數據。
 # 但根據原始腳本的設計，這是一個共享的追蹤器。
+
 tracker = IngressHackTracker()
+# 啟動時自動載入本地 CSV（假設是 tab 分隔，欄位名稱為中文）
+csv_path = 'ingress_hack_data.csv'
+if os.path.exists(csv_path):
+    tracker.load_from_csv(csv_path)
 
 # --- 輔助函數 ---
 def is_authenticated():
