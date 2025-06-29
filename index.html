@@ -123,7 +123,9 @@
                  <button onclick="syncFromGitHub()" class="btn">🔄 從 GitHub 同步</button>
                  <button onclick="uploadToGitHub()" class="btn">☁️ 上傳到 GitHub</button>
             </div>
-        async function uploadLocalCSV() {
+
+        // 將 uploadLocalCSV 定義到全域 window 物件，確保可被 button 呼叫
+        window.uploadLocalCSV = async function uploadLocalCSV() {
             const fileInput = document.getElementById('csvFile');
             if (!fileInput.files || fileInput.files.length === 0) {
                 showAlert('請先選擇要上傳的 CSV 檔案', 'error');
