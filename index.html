@@ -161,7 +161,10 @@
                 });
                 if (data.status === 'success') {
                     showAlert(`登入成功！歡迎 ${data.username}`, 'success');
-                    await checkAuthentication();
+                    // 直接更新狀態，不要馬上 call checkAuthentication
+                    updateAuthStatus(true, data.username);
+                    await loadAllData();
+                    await loadGitHubConfig();
                 }
             } catch (error) { console.error("Login failed:", error); }
         }
