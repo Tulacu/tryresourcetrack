@@ -8,13 +8,18 @@ from datetime import timedelta
 from ingress_tracker import IngressHackTracker
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.urandom(24) 
 
-# ▼▼▼ 加入這兩行，來設定跨網域 Cookie 的規則 ▼▼▼
+# (1) 固定的印章 (必要的)
+# 從環境變數讀取 SECRET_KEY，讓 session 在伺服器重啟後依然有效
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'a_default_secret_key_for_local_dev')
+
+# (2) 允許跨網域Cookie的安全設定 (必要的)
+# 讓瀏覽器同意在跨網域時發送 session cookie
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 app.config['SESSION_COOKIE_SECURE'] = True
-# ============================================
-# ▼▼▼ 請將您的 CORS 設定暫時修改成這一行 ▼▼▼
+
+# (3) 門禁系統，指定誰可以進來 (必要的)
+# 告訴伺服器只接受來自您 GitHub Pages 網站的請求
 CORS(app, origins="https://tulacu.github.io", supports_credentials=True)
 
 # 創建一個全域的 tracker 實例。在真實的多人應用中，你可能需要為每個用戶管理數據。
