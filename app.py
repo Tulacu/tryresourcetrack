@@ -52,22 +52,34 @@ def upload_csv():
     if not is_authenticated():
         print("[LOG] 未登入，拒絕上傳")
         return jsonify({'error': '請先登入'}), 401
-    if 'file' not in request.files:
-        print("[LOG] 未收到檔案")
-        return jsonify({'error': '未收到檔案'}), 400
-    file = request.files['file']
-    if file.filename == '':
-        print("[LOG] 未選擇檔案")
-        return jsonify({'error': '未選擇檔案'}), 400
-    # 讀取上傳的 CSV 檔案內容
-    try:
-        # 直接用 file.stream 傳給 load_from_csv
-        tracker.load_from_csv(file.stream)
-        print("[LOG] CSV 上傳並載入成功")
-        return jsonify({'status': 'success', 'message': 'CSV 已上傳並載入', 'data': tracker.hack_data})
-    except Exception as e:
-        print(f"[LOG] CSV 載入失敗: {e}")
-        return jsonify({'status': 'error', 'message': f'CSV 載入失敗: {e}'}), 500
+
+    # 支援前端直接傳 csv 字串
+    csv_content = request.form.get('csv')
+    if csv_content:
+        try:
+            count = tracker.load_from_csv_content(csv_content)
+            print(f"[LOG] CSV 字串上傳並載入成功，新增 {count} 筆")
+            return jsonify({'status': 'success', 'message': f'CSV 已上傳並載入，新增 {count} 筆', 'data': tracker.hack_data})
+        except Exception as e:
+            print(f"[LOG] CSV 字串載入失敗: {e}")
+            return jsonify({'status': 'error', 'message': f'CSV 載入失敗: {e}'}), 500
+
+    # 傳統檔案上傳
+    if 'file' in request.files:
+        file = request.files['file']
+        if file.filename == '':
+            print("[LOG] 未選擇檔案")
+            return jsonify({'error': '未選擇檔案'}), 400
+        try:
+            tracker.load_from_csv(file.stream)
+            print("[LOG] CSV 檔案上傳並載入成功")
+            return jsonify({'status': 'success', 'message': 'CSV 已上傳並載入', 'data': tracker.hack_data})
+        except Exception as e:
+            print(f"[LOG] CSV 檔案載入失敗: {e}")
+            return jsonify({'status': 'error', 'message': f'CSV 載入失敗: {e}'}), 500
+
+    print("[LOG] 未收到 csv 字串或檔案")
+    return jsonify({'error': '未收到 csv 字串或檔案'}), 400
 
 @app.route('/')
 def index():

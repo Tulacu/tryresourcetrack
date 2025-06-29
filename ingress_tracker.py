@@ -482,6 +482,32 @@ class IngressHackTracker:
             print("❌ 操作已取消")
             return False
     
+    def load_from_csv_content(self, csv_content: str) -> int:
+        """
+        從 CSV 字串內容匯入資料，回傳成功匯入的筆數
+        """
+        lines = csv_content.strip().split('\n')
+        if len(lines) < 2:
+            raise ValueError("CSV 檔案格式不正確！")
+        headers = [h.strip() for h in lines[0].split(',')]
+        imported_data = []
+        for line in lines[1:]:
+            if line.strip():
+                values = line.split(',')
+                record = {}
+                for i, header in enumerate(headers):
+                    if header == 'timestamp':
+                        record[header] = values[i].strip()
+                    else:
+                        record[header] = int(values[i]) if values[i].strip() else 0
+                imported_data.append(record)
+        # 合併資料（避免重複）
+        existing_timestamps = {r['timestamp'] for r in self.hack_data}
+        new_records = [r for r in imported_data if r['timestamp'] not in existing_timestamps]
+        self.hack_data.extend(new_records)
+        self.save_data()
+        return len(new_records)
+
     def save_data(self):
         """儲存資料到檔案"""
         try:
