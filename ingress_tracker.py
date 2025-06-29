@@ -511,26 +511,31 @@ class IngressHackTracker:
         """
         從 CSV 字串內容匯入資料，回傳成功匯入的筆數
         """
+        from datetime import datetime
         lines = csv_content.strip().split('\n')
         if len(lines) < 2:
             raise ValueError("CSV 檔案格式不正確！")
         headers = [h.strip() for h in lines[0].split(',')]
+        has_timestamp = 'timestamp' in headers
         imported_data = []
         for line in lines[1:]:
             if line.strip():
                 values = line.split(',')
+                if len(values) != len(headers):
+                    continue
                 record = {}
                 for i, header in enumerate(headers):
+                    v = values[i].strip()
                     if header == 'timestamp':
-                        record[header] = values[i].strip()
+                        record[header] = v if v else datetime.now().isoformat()
                     else:
-                        v = values[i].strip()
                         try:
                             record[header] = int(float(v)) if v else 0
                         except Exception:
                             record[header] = 0
+                if not has_timestamp:
+                    record['timestamp'] = datetime.now().isoformat()
                 imported_data.append(record)
-        # 合併資料（避免重複）
         existing_timestamps = {r['timestamp'] for r in self.hack_data}
         new_records = [r for r in imported_data if r['timestamp'] not in existing_timestamps]
         self.hack_data.extend(new_records)
