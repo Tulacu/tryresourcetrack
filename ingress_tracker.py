@@ -20,6 +20,20 @@ import requests
 import base64
 
 class IngressHackTracker:
+    def load_from_csv(self, file_stream) -> int:
+        """
+        從檔案流匯入 CSV 資料，回傳成功匯入的筆數
+        """
+        import io
+        if hasattr(file_stream, 'read'):
+            content = file_stream.read()
+            if isinstance(content, bytes):
+                content = content.decode('utf-8-sig')
+            else:
+                content = str(content)
+        else:
+            content = str(file_stream)
+        return self.load_from_csv_content(content)
     def __init__(self, data_file: str = "ingress_hack_data.json"):
         """初始化追蹤器"""
         self.data_file = data_file
