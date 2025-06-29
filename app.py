@@ -31,6 +31,7 @@ from flask_cors import CORS
 from datetime import timedelta
 from ingress_tracker import IngressHackTracker
 
+# 確保 app 實例在全域（gunicorn app:app 需要）
 app = Flask(__name__)
 
 # (1) 固定的印章 (必要的)
