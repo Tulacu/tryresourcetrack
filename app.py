@@ -1,3 +1,27 @@
+# 新增：上傳 CSV API
+from flask import send_file
+from werkzeug.utils import secure_filename
+import io
+
+# ...existing code...
+
+@app.route('/api/upload_csv', methods=['POST'])
+def upload_csv():
+    """上傳 CSV 並立即載入資料"""
+    if not is_authenticated():
+        return jsonify({'error': '請先登入'}), 401
+    if 'file' not in request.files:
+        return jsonify({'error': '未收到檔案'}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': '未選擇檔案'}), 400
+    # 讀取上傳的 CSV 檔案內容
+    try:
+        # 直接用 file.stream 傳給 load_from_csv
+        tracker.load_from_csv(file.stream)
+        return jsonify({'status': 'success', 'message': 'CSV 已上傳並載入', 'data': tracker.hack_data})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': f'CSV 載入失敗: {e}'}), 500
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 

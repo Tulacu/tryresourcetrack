@@ -103,6 +103,16 @@
             </div>
 
             <div class="section">
+                <h2>☁️ 匯入本地 CSV</h2>
+                <div class="input-grid">
+                    <div class="input-group">
+                        <label for="csvFile">選擇 CSV 檔案</label>
+                        <input type="file" id="csvFile" accept=".csv,.tsv,text/csv">
+                    </div>
+                </div>
+                <button onclick="uploadLocalCSV()" class="btn">📤 上傳並載入 CSV</button>
+            </div>
+            <div class="section">
                  <h2>⚙️ GitHub 同步設定</h2>
                  <div class="input-grid">
                     <div class="input-group"><label for="githubRepo">GitHub Repository</label><input type="text" id="githubRepo" placeholder="username/repo-name"></div>
@@ -113,6 +123,33 @@
                  <button onclick="syncFromGitHub()" class="btn">🔄 從 GitHub 同步</button>
                  <button onclick="uploadToGitHub()" class="btn">☁️ 上傳到 GitHub</button>
             </div>
+        async function uploadLocalCSV() {
+            const fileInput = document.getElementById('csvFile');
+            if (!fileInput.files || fileInput.files.length === 0) {
+                showAlert('請先選擇要上傳的 CSV 檔案', 'error');
+                return;
+            }
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/upload_csv`, {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                if (response.ok && data.status === 'success') {
+                    showAlert('CSV 已成功上傳並載入', 'success');
+                    hackData = data.data;
+                    updateAllVisuals();
+                } else {
+                    showAlert(data.message || 'CSV 上傳失敗', 'error');
+                }
+            } catch (error) {
+                showAlert('CSV 上傳失敗: ' + error, 'error');
+            }
+        }
         </div>
     </div>
 

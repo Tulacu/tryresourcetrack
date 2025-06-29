@@ -2,14 +2,21 @@ import csv
 
 class IngressHackTracker:
     # ...existing code...
-    def load_from_csv(self, filename):
+    def load_from_csv(self, file_or_path):
+        """
+        file_or_path: 可以是檔案路徑(str)或 file-like 物件 (如上傳的 stream)
+        """
         try:
-            with open(filename, newline='', encoding='utf-8') as csvfile:
-                reader = csv.DictReader(csvfile, delimiter='\t')
+            if isinstance(file_or_path, str):
+                f = open(file_or_path, newline='', encoding='utf-8')
+            else:
+                # file_or_path 是 file-like 物件
+                f = io.TextIOWrapper(file_or_path, encoding='utf-8')
+            with f:
+                reader = csv.DictReader(f, delimiter='\t')
                 self.hack_data = []
                 for row in reader:
                     rec = {}
-                    # 對應你的中文欄位名稱
                     rec['hackCount'] = int(row.get('Hack次數', 1))
                     for col in self.item_columns:
                         rec[col] = int(row.get(col, 0))
