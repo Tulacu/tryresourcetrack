@@ -156,43 +156,189 @@
                 showAlert('CSV 上傳失敗: ' + error, 'error');
             }
         }
-    </script>
-        // ...existing code...
 
-        // 將 uploadLocalCSV 定義到全域 window 物件，確保可被 button 呼叫
-        window.uploadLocalCSV = async function uploadLocalCSV() {
-            const fileInput = document.getElementById('csvFile');
-            if (!fileInput.files || fileInput.files.length === 0) {
-                showAlert('請先選擇要上傳的 CSV 檔案', 'error');
-                return;
-            }
-            const file = fileInput.files[0];
-            const formData = new FormData();
-            formData.append('file', file);
+        // 其餘 JS 程式碼
+        const API_BASE_URL = 'https://tryresourcetrack.onrender.com'; // <-- 請確認這是您正確的網址
+        const itemColumns = ['L7Res', 'L8Res', 'L7XMP', 'L8XMP', 'L7US', 'L8US', 'L7PC', 'L8PC', 'Cshield', 'Rshield', 'VRShield', 'AXAShield', 'Else', 'Cmod', 'Rmod', 'VRmod', 'Virus'];
+        const itemNames = { 'L7Res': 'L7 共振器', 'L8Res': 'L8 共振器', 'L7XMP': 'L7 XMP', 'L8XMP': 'L8 XMP', 'L7US': 'L7 超擊', 'L8US': 'L8 超擊', 'L7PC': 'L7 能量方塊', 'L8PC': 'L8 能量方塊', 'Cshield': '普通護盾', 'Rshield': '稀有護盾', 'VRShield': '極稀有護盾', 'AXAShield': 'AXA 護盾', 'Else': '其他物品', 'Cmod': '普通模組', 'Rmod': '稀有模組', 'VRmod': '極稀有模組', 'Virus': '病毒' };
+        let hackData = [];
+        let chart = null;
+
+        function showAlert(message, type) {
+            const existingAlert = document.querySelector('.alert');
+            if (existingAlert) existingAlert.remove();
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            document.body.appendChild(alert);
+            setTimeout(() => { if (alert.parentNode) alert.remove(); }, 4000);
+        }
+
+        async function apiFetch(endpoint, options = {}) {
             try {
-                const response = await fetch(`${API_BASE_URL}/api/upload_csv`, {
-                    method: 'POST',
-                    body: formData,
-                    credentials: 'include'
-                });
-                const data = await response.json();
-                if (response.ok && data.status === 'success') {
-                    showAlert('CSV 已成功上傳並載入', 'success');
-                    hackData = data.data;
-                    updateAllVisuals();
-                } else {
-                    showAlert(data.message || 'CSV 上傳失敗', 'error');
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, credentials: 'include' });
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ message: `HTTP 錯誤: ${response.status} ${response.statusText}` }));
+                    throw new Error(errorData.message || errorData.error);
                 }
+                if (response.status === 204) return null;
+                return await response.json();
             } catch (error) {
-                showAlert('CSV 上傳失敗: ' + error, 'error');
+                showAlert(error.message, 'error');
+                throw error;
             }
         }
 
-        // ...existing code...
-        </div>
-    </div>
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            if (!username || !password) return showAlert('請輸入帳號和密碼！', 'error');
+            try {
+                const data = await apiFetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                if (data.status === 'success') {
+                    showAlert(`登入成功！歡迎 ${data.username}`, 'success');
+                    // 直接更新狀態，不要馬上 call checkAuthentication
+                    updateAuthStatus(true, data.username);
+                    await loadAllData();
+                    await loadGitHubConfig();
+                }
+            } catch (error) { console.error("Login failed:", error); }
+        }
 
-    <script>
+        async function logout() {
+            try {
+                await apiFetch('/api/logout', { method: 'POST' });
+                showAlert('已登出！', 'success');
+                await checkAuthentication();
+            } catch (error) { console.error("Logout failed:", error); }
+        }
+        
+        // ▼▼▼ 邏輯修正處 ▼▼▼
+        async function checkAuthentication() {
+            try {
+                const data = await apiFetch('/api/auth/status');
+                updateAuthStatus(data.authenticated, data.username);
+                if (data.authenticated) {
+                    // 只有在確認登入後，才去載入所有數據
+                    await loadAllData();
+                    await loadGitHubConfig();
+                } else {
+                    // 如果未登入，就清空本地數據並重繪畫面 (此時不會發出新的API請求)
+                    hackData = [];
+                    updateAllVisuals();
+                }
+            } catch (error) {
+                updateAuthStatus(false);
+                hackData = [];
+                updateAllVisuals();
+            }
+        }
+        
+        function updateAuthStatus(isAuthenticated, username = '') {
+            console.log('updateAuthStatus called', isAuthenticated, username);
+            const authStatus = document.getElementById('authStatus');
+            const mainContent = document.getElementById('mainContent');
+            if (isAuthenticated) {
+                authStatus.className = 'auth-status authenticated';
+                authStatus.textContent = `✅ 已登入: ${username}`;
+                mainContent.classList.remove('locked');
+            } else {
+                authStatus.className = 'auth-status not-authenticated';
+                authStatus.textContent = '❌ 未登入';
+                mainContent.classList.add('locked');
+            }
+        }
+
+        async function loadAllData() {
+            try {
+                hackData = await apiFetch('/api/data'); // 獲取主要數據
+                updateAllVisuals(); // 用獲取到的數據來更新畫面
+            } catch (error) {
+                hackData = [];
+                updateAllVisuals();
+            }
+        }
+
+        function updateAllVisuals() {
+            updateStats(); // 這個函式現在不會發出 API 請求
+            updateDataTable();
+        }
+        
+        async function addHackData() {
+            const newRecord = { hackCount: parseInt(document.getElementById('hackCount').value) || 1 };
+            itemColumns.forEach(col => newRecord[col] = parseInt(document.getElementById(col).value) || 0);
+            try {
+                await apiFetch('/api/data', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newRecord) });
+                showAlert('資料已新增！', 'success');
+                await loadAllData();
+            } catch (error) {}
+        }
+        
+        // ▼▼▼ 邏輯修正處 ▼▼▼
+        function updateStats() {
+            const statsGrid = document.getElementById('statsGrid');
+            if (!hackData) { // 基本的防錯
+                statsGrid.innerHTML = '';
+                return;
+            }
+
+            const totalHacks = hackData.reduce((sum, rec) => sum + (rec['hackCount'] || 0), 0);
+            const totalItems = hackData.reduce((sum, rec) => sum + itemColumns.reduce((iSum, col) => iSum + (rec[col] || 0), 0), 0);
+            const avgItemsPerHack = totalHacks > 0 ? (totalItems / totalHacks) : 0;
+            const totalRecords = hackData.length;
+
+            statsGrid.innerHTML = `
+                <div class="stat-card"><div class="stat-value">${totalHacks}</div><div class="stat-label">總 Hack 次數</div></div>
+                <div class="stat-card"><div class="stat-value">${totalItems}</div><div class="stat-label">總物資數量</div></div>
+                <div class="stat-card"><div class="stat-value">${avgItemsPerHack.toFixed(2)}</div><div class="stat-label">平均每次 Hack 物資量</div></div>
+                <div class="stat-card"><div class="stat-value">${totalRecords}</div><div class="stat-label">總記錄筆數</div></div>
+            `;
+        }
+        
+        function updateDataTable() {
+            const tbody = document.getElementById('dataTableBody');
+            tbody.innerHTML = '';
+            if (!hackData || hackData.length === 0) return;
+            const totalHacks = hackData.reduce((sum, rec) => sum + (rec['hackCount'] || 0), 0);
+            const totalItems = hackData.reduce((sum, rec) => sum + itemColumns.reduce((iSum, col) => iSum + (rec[col] || 0), 0), 0);
+            itemColumns.forEach(column => {
+                const total = hackData.reduce((sum, rec) => sum + (rec[column] || 0), 0);
+                if (total > 0) {
+                    const percentage = totalItems > 0 ? ((total / totalItems) * 100).toFixed(2) : '0.00';
+                    const avgPerHack = totalHacks > 0 ? (total / totalHacks).toFixed(2) : '0.00';
+                    const row = `<tr><td>${itemNames[column]}</td><td>${total}</td><td>${percentage}%</td><td>${avgPerHack}</td></tr>`;
+                    tbody.innerHTML += row;
+                }
+            });
+        }
+        
+        // 省略其他 GitHub 相關的輔助函式...
+        async function loadGitHubConfig() {
+            showAlert('GitHub 設定載入功能尚未實作', 'warning');
+            // TODO: 實作 GitHub 設定載入
+        }
+
+        async function saveGitHubConfig() {
+            showAlert('GitHub 設定儲存功能尚未實作', 'warning');
+            // TODO: 實作 GitHub 設定儲存
+        }
+
+        async function syncFromGitHub() {
+            showAlert('從 GitHub 同步功能尚未實作', 'warning');
+            // TODO: 實作從 GitHub 同步資料
+        }
+
+        async function uploadToGitHub() {
+            showAlert('上傳到 GitHub 功能尚未實作', 'warning');
+            // TODO: 實作上傳資料到 GitHub
+        }
+        
+        document.addEventListener('DOMContentLoaded', checkAuthentication);
+    </script>
         const API_BASE_URL = 'https://tryresourcetrack.onrender.com'; // <-- 請確認這是您正確的網址
 
         const itemColumns = ['L7Res', 'L8Res', 'L7XMP', 'L8XMP', 'L7US', 'L8US', 'L7PC', 'L8PC', 'Cshield', 'Rshield', 'VRShield', 'AXAShield', 'Else', 'Cmod', 'Rmod', 'VRmod', 'Virus'];
