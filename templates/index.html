@@ -128,6 +128,8 @@
     </div>
 
     <script>
+        // 其餘 JS 程式碼
+        // ...existing code...
         // 將 uploadLocalCSV 定義到全域 window 物件，確保可被 button 呼叫
         window.uploadLocalCSV = async function uploadLocalCSV() {
             const fileInput = document.getElementById('csvFile');
@@ -156,8 +158,6 @@
                 showAlert('CSV 上傳失敗: ' + error, 'error');
             }
         }
-
-        // 其餘 JS 程式碼
         const API_BASE_URL = 'https://tryresourcetrack.onrender.com'; // <-- 請確認這是您正確的網址
         const itemColumns = ['L7Res', 'L8Res', 'L7XMP', 'L8XMP', 'L7US', 'L8US', 'L7PC', 'L8PC', 'Cshield', 'Rshield', 'VRShield', 'AXAShield', 'Else', 'Cmod', 'Rmod', 'VRmod', 'Virus'];
         const itemNames = { 'L7Res': 'L7 共振器', 'L8Res': 'L8 共振器', 'L7XMP': 'L7 XMP', 'L8XMP': 'L8 XMP', 'L7US': 'L7 超擊', 'L8US': 'L8 超擊', 'L7PC': 'L7 能量方塊', 'L8PC': 'L8 能量方塊', 'Cshield': '普通護盾', 'Rshield': '稀有護盾', 'VRShield': '極稀有護盾', 'AXAShield': 'AXA 護盾', 'Else': '其他物品', 'Cmod': '普通模組', 'Rmod': '稀有模組', 'VRmod': '極稀有模組', 'Virus': '病毒' };
