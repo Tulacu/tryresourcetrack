@@ -196,6 +196,7 @@
         }
         
         function updateAuthStatus(isAuthenticated, username = '') {
+            console.log('updateAuthStatus called', isAuthenticated, username);
             const authStatus = document.getElementById('authStatus');
             const mainContent = document.getElementById('mainContent');
             if (isAuthenticated) {
