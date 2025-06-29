@@ -15,7 +15,7 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 app.config['SESSION_COOKIE_SECURE'] = True
 # ============================================
 # ▼▼▼ 請將您的 CORS 設定暫時修改成這一行 ▼▼▼
-CORS(app, supports_credentials=True)
+CORS(app, origins="https://tulacu.github.io", supports_credentials=True)
 
 # 創建一個全域的 tracker 實例。在真實的多人應用中，你可能需要為每個用戶管理數據。
 # 但根據原始腳本的設計，這是一個共享的追蹤器。
