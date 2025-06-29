@@ -520,7 +520,14 @@ class IngressHackTracker:
             raise ValueError("CSV 檔案格式不正確！")
         headers = [h.strip() for h in lines[0].split(',')]
         has_timestamp = 'timestamp' in headers
-        has_hackcount = 'hackCount' in headers
+        # 支援自動對應中文欄位名稱
+        hackcount_aliases = ['hackCount', 'Hack次數', 'hack_times', '次數', 'count']
+        hackcount_idx = None
+        for alias in hackcount_aliases:
+            if alias in headers:
+                hackcount_idx = headers.index(alias)
+                break
+        has_hackcount = 'hackCount' in headers or hackcount_idx is not None
         imported_data = []
         for line in lines[1:]:
             if line.strip():
@@ -542,8 +549,14 @@ class IngressHackTracker:
                             record[header] = int(float(v)) if v else 0
                         except Exception:
                             record[header] = 0
-                # 若原本就沒有 hackCount 欄，則自動補 1
-                if not has_hackcount:
+                # 若原本就沒有 hackCount 欄，但有別名欄位，則自動補上
+                if not 'hackCount' in record and hackcount_idx is not None:
+                    try:
+                        v = values[hackcount_idx].strip()
+                        record['hackCount'] = int(float(v)) if v else 1
+                    except Exception:
+                        record['hackCount'] = 1
+                elif not has_hackcount:
                     record['hackCount'] = 1
                 if not has_timestamp:
                     record['timestamp'] = datetime.now().isoformat()
