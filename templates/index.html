@@ -386,7 +386,21 @@
         }
 
         async function syncFromGitHub() {
-            showAlert('從 GitHub 同步功能尚未實作', 'warning');
+            try {
+                const res = await fetch('/api/github/sync', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    showAlert('已從 GitHub 同步最新資料！', 'success');
+                    await loadAllData();
+                } else {
+                    showAlert(data.message || '同步失敗', 'error');
+                }
+            } catch (error) {
+                showAlert('同步失敗: ' + error.message, 'error');
+            }
         }
 
         async function uploadToGitHub() {
