@@ -7,22 +7,11 @@ from flask_cors import CORS
 from datetime import timedelta
 from ingress_tracker import IngressHackTracker
 
-# =========================================================
-# ▼▼▼ 正確的位置在這裡 ▼▼▼
-# 緊接著 import 語句之後，在任何函式或路由定義之前
 app = Flask(__name__)
-# =========================================================
-
-# --- Flask App 初始化 ---
 app.config['SECRET_KEY'] = os.urandom(24) 
-# 設定 session 的生命週期，例如 24 小時
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=24)
-# 之後請將 'https://your-username.github.io' 換成你真正的 GitHub Pages 網址
-origins = [
-    "https://tulacu.github.io", 
-    "http://127.0.0.1:5000" # 保留本機測試用
-]
-CORS(app, resources={r"/api/*": {"origins": origins}}, supports_credentials=True)
+
+# ▼▼▼ 請將您的 CORS 設定暫時修改成這一行 ▼▼▼
+CORS(app, supports_credentials=True)
 
 # 創建一個全域的 tracker 實例。在真實的多人應用中，你可能需要為每個用戶管理數據。
 # 但根據原始腳本的設計，這是一個共享的追蹤器。
