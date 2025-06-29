@@ -277,9 +277,22 @@
         }
         
         // 省略其他 GitHub 相關的輔助函式...
-        async function saveGitHubConfig() { showAlert('此功能尚未完全實現', 'warning'); }
-        async function syncFromGitHub() { showAlert('此功能尚未完全實現', 'warning'); }
-        async function uploadToGitHub() { showAlert('此功能尚未完全實現', 'warning'); }
+        async function loadGitHubConfig() {
+            showAlert('GitHub 設定載入功能尚未實作', 'warning');
+            // TODO: 實作 GitHub 設定載入
+        }
+        async function saveGitHubConfig() {
+            showAlert('GitHub 設定儲存功能尚未實作', 'warning');
+            // TODO: 實作 GitHub 設定儲存
+        }
+        async function syncFromGitHub() {
+            showAlert('從 GitHub 同步功能尚未實作', 'warning');
+            // TODO: 實作從 GitHub 同步資料
+        }
+        async function uploadToGitHub() {
+            showAlert('上傳到 GitHub 功能尚未實作', 'warning');
+            // TODO: 實作上傳資料到 GitHub
+        }
         
         document.addEventListener('DOMContentLoaded', checkAuthentication);
     </script>
