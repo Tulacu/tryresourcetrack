@@ -305,7 +305,10 @@ class IngressHackTracker:
                 'total_records': 0
             }
         
-        total_hacks = sum(record['hackCount'] for record in self.hack_data)
+        total_hacks = sum(
+            int(record.get('hackCount', 1) or 1)
+            for record in self.hack_data
+        )
         total_items = sum(
             sum(record.get(column, 0) for column in self.item_columns)
             for record in self.hack_data
@@ -517,6 +520,7 @@ class IngressHackTracker:
             raise ValueError("CSV 檔案格式不正確！")
         headers = [h.strip() for h in lines[0].split(',')]
         has_timestamp = 'timestamp' in headers
+        has_hackcount = 'hackCount' in headers
         imported_data = []
         for line in lines[1:]:
             if line.strip():
@@ -528,11 +532,19 @@ class IngressHackTracker:
                     v = values[i].strip()
                     if header == 'timestamp':
                         record[header] = v if v else datetime.now().isoformat()
+                    elif header == 'hackCount':
+                        try:
+                            record[header] = int(float(v)) if v else 1
+                        except Exception:
+                            record[header] = 1
                     else:
                         try:
                             record[header] = int(float(v)) if v else 0
                         except Exception:
                             record[header] = 0
+                # 若原本就沒有 hackCount 欄，則自動補 1
+                if not has_hackcount:
+                    record['hackCount'] = 1
                 if not has_timestamp:
                     record['timestamp'] = datetime.now().isoformat()
                 imported_data.append(record)
