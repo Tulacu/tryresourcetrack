@@ -124,6 +124,12 @@
                  <button onclick="uploadToGitHub()" class="btn">☁️ 上傳到 GitHub</button>
             </div>
 
+        // ...existing code...
+        </div>
+    </div>
+
+    <script>
+        // ...existing code...
         // 將 uploadLocalCSV 定義到全域 window 物件，確保可被 button 呼叫
         window.uploadLocalCSV = async function uploadLocalCSV() {
             const fileInput = document.getElementById('csvFile');
@@ -152,6 +158,39 @@
                 showAlert('CSV 上傳失敗: ' + error, 'error');
             }
         }
+    </script>
+        // ...existing code...
+
+        // 將 uploadLocalCSV 定義到全域 window 物件，確保可被 button 呼叫
+        window.uploadLocalCSV = async function uploadLocalCSV() {
+            const fileInput = document.getElementById('csvFile');
+            if (!fileInput.files || fileInput.files.length === 0) {
+                showAlert('請先選擇要上傳的 CSV 檔案', 'error');
+                return;
+            }
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/upload_csv`, {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                if (response.ok && data.status === 'success') {
+                    showAlert('CSV 已成功上傳並載入', 'success');
+                    hackData = data.data;
+                    updateAllVisuals();
+                } else {
+                    showAlert(data.message || 'CSV 上傳失敗', 'error');
+                }
+            } catch (error) {
+                showAlert('CSV 上傳失敗: ' + error, 'error');
+            }
+        }
+
+        // ...existing code...
         </div>
     </div>
 
