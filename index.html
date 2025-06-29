@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ingress Portal Hack 數據追蹤器</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #4a5568;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .section {
+            margin-bottom: 40px;
+            padding: 25px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            border-left: 5px solid #667eea;
+        }
+        
+        .section h2 {
+            color: #2d3748;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #4a5568;
+        }
+        
+        input[type="number"], input[type="text"], input[type="password"] {
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        input[type="number"]:focus, input[type="text"]:focus, input[type="password"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(-1px);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            border-color: #667eea;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            color: #718096;
+            font-size: 0.9em;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-top: 30px;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        
+        .data-table th,
+        .data-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .data-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: bold;
+        }
+        
+        .data-table tr:hover {
+            background-color: #f7fafc;
+        }
+        
+        .alert {
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        
+        .alert-success {
+            background-color: #c6f6d5;
+            color: #22543d;
+            border: 1px solid #9ae6b4;
+        }
+        
+        .alert-error {
+            background-color: #fed7d7;
+            color: #742a2a;
+            border: 1px solid #fc8181;
+        }
+        
+        .alert-warning {
+            background-color: #fef5e7;
+            color: #744210;
+            border: 1px solid #f6ad55;
+        }
+        
+        .auth-section {
+            background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+            color: white;
+        }
+        
+        .auth-section h2 {
+            color: white;
+        }
+        
+        .auth-input {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+        
+        .auth-input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .auth-btn {
+            background: linear-gradient(135deg, #38a169 0%, #48bb78 100%);
+        }
+        
+        .github-section {
+            background: linear-gradient(135deg, #24292e 0%, #0366d6 100%);
+            color: white;
+        }
+        
+        .github-section h2 {
+            color: white;
+        }
+        
+        .github-input {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+        
+        .github-input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .github-btn {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+        
+        .auth-status {
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .auth-status.authenticated {
+            background-color: #c6f6d5;
+            color: #22543d;
+            border: 1px solid #9ae6b4;
+        }
+        
+        .auth-status.not-authenticated {
+            background-color: #fed7d7;
+            color: #742a2a;
+            border: 1px solid #fc8181;
+        }
+        
+        .disabled-overlay {
+            position: relative;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        
+        .disabled-overlay::after {
+            content: '🔒 請先登入以使用此功能';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            z-index: 10;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            .input-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Ingress Portal Hack 數據追蹤器</h1>
+        
+        <!-- 身份驗證區域 -->
+        <div class="section auth-section">
+            <h2>🔐 身份驗證</h2>
+            <div class="auth-status not-authenticated" id="authStatus">
+                ❌ 未登入 - 請輸入帳號密碼以使用完整功能
+            </div>
+            <div class="input-grid">
+                <div class="input-group">
+                    <label for="username">帳號</label>
+                    <input type="text" id="username" class="auth-input" placeholder="請輸入帳號">
+                </div>
+                <div class="input-group">
+                    <label for="password">密碼</label>
+                    <input type="password" id="password" class="auth-input" placeholder="請輸入密碼">
+                </div>
+            </div>
+            <button onclick="login()" class="btn auth-btn">🔑 登入</button>
+            <button onclick="logout()" class="btn" style="background: linear-gradient(135deg, #e53e3e 0%, #fc8181 100%);">🚪 登出</button>
+        </div>
+        
+        <!-- GitHub 設定區域 -->
+        <div class="section github-section" id="githubSection">
+            <h2>⚙️ GitHub 儲存設定</h2>
+            <div class="input-grid">
+                <div class="input-group">
+                    <label for="githubRepo">GitHub Repository (例: username/repo-name)</label>
+                    <input type="text" id="githubRepo" class="github-input" placeholder="請輸入 GitHub repository">
+                </div>
+                <div class="input-group">
+                    <label for="githubToken">GitHub Personal Access Token</label>
+                    <input type="password" id="githubToken" class="github-input" placeholder="請輸入 GitHub token">
+                </div>
+                <div class="input-group">
+                    <label for="dataFileName">資料檔案名稱</label>
+                    <input type="text" id="dataFileName" class="github-input" placeholder="ingress_hack_data.csv" value="ingress_hack_data.csv">
+                </div>
+            </div>
+            <button onclick="saveGitHubConfig()" class="btn github-btn">💾 儲存 GitHub 設定</button>
+            <button onclick="syncFromGitHub()" class="btn github-btn">🔄 從 GitHub 同步資料</button>
+        </div>
+        
+        
+        <!-- 數據輸入區域  -->
+        <div class="section" id="dataInputSection">
+            <h2>📝 新增 Hack 數據</h2>
+            <div class="input-grid">
+                <div class="input-group">
+                    <label for="hackCount">Hack次數</label>
+                    <input type="number" id="hackCount" min="1" value="1">
+                </div>
+                <div class="input-group">
+                    <label for="L7Res">L7 Resonator</label>
+                    <input type="number" id="L7Res" min="0" value="0">
+                </div>
+                <div class="input-group">
+                    <label for="L8Res">L8 Resonator</label>
+                    <input type="number" id="L8Res" min="0" value="0">
+                </div>
+                <div class="input-group">
+                    <label for="L7XMP">L7 XMP</label>
+                    <input type="number" id="L7XMP" min="0" value="0">
+                </div>
+                <div class="input-group">
+                    <label for="L8XMP">L8 XMP</label>
+                    <input type="number" id="L8XMP" min="0" value="0">
+                </div>
+                <div class="input-group">
+                    <label for="L7US">L7 Ultra Strike</label>
+                    <input type="number" id="L7US" min="0" value="0">
+                </div>
+                <div class="input-group">
+                    <label for="L8US">L8 Ultra Strike</label>
+                    <input type="number" id="L8US" min="0" value="0">
+                </div>
+                <div class="input-group">
+                    <label for="L7PC">L7 Power Cube</label>
+                    <input type="number" id="L7PC" min="0" value="0">
+                </div>
+                <div class="input-group">
+                    <label for="L8PC">L8 Power Cube</label>
+                    <input type="number" id="L8PC" min="0" value="0">
+                </div>
+                <div class="input-group">
+                    <label for="Cshield">Common Shield</label>
+                    <input type="number" id="Cshield" min="0" value="0">
+                </div>
+                <div class="input-group">
+                    <label for="Rshield">Rare Shield</label>
+                    <input type="number" id="Rshield" min="0" value="0">
+                </div>
+                <div class="input-group">
+                    <label for="VRShield">Very Rare Shield</label>
+                    <input type="number" id="VRShield" min="0" value="0">
+                </div>
+                <div class="input-group">
+                    <label for="AXAShield">AXA Shield</label>
+                    <input type="number" id="AXAShield" min="0" value="0">
+                </div>
+                <div class="input-group">
+                    <label for="Else">其他物品</label>
+                    <input type="number" id="Else" min="0" value="0">
+                </div>
+                <div class="input-group">
+                    <label for="Cmod">Common Mod</label>
+                    <input type="number" id="Cmod" min="0" value="0">
+                </div>
+                <div class="input-group">
+                    <label for="Rmod">Rare Mod</label>
+                    <input type="number" id="Rmod" min="0" value="0">
+                </div>
+                <div class="input-group">
+                    <label for="VRmod">Very Rare Mod</label>
+                    <input type="number" id="VRmod" min="0" value="0">
+                </div>
+                <div class="input-group">
+                    <label for="Virus">Virus</label>
+                    <input type="number" id="Virus" min="0" value="0">
+                </div>
+            </div>
+            <button onclick="addHackData()" class="btn">➕ 新增數據</button>
+            <button onclick="clearForm()" class="btn" style="background: linear-gradient(135deg, #e53e3e 0%, #fc8181 100%);">🗑️ 清空表單</button>
+        </div>
+        
+        <!-- 統計顯示區域 -->
+        <div class="section">
+            <h2>📊 統計摘要</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalHacks">0</div>
+                    <div class="stat-label">總 Hack 次數</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalItems">0</div>
+                    <div class="stat-label">總物資數量</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="avgItemsPerHack">0.00</div>
+                    <div class="stat-label">平均每次 Hack 物資量</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalRecords">0</div>
+                    <div class="stat-label">總記錄筆數</div>
+                </div>
+            </div>
+            
+            <!-- 圖表區域 -->
+            <div class="chart-container">
+                <canvas id="itemChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- 數據管理區域 -->
+        <div class="section" id="dataManagementSection">
+            <h2>💾 數據管理</h2>
+            <button onclick="exportToCSV()" class="btn">📥 匯出 CSV</button>
+            <button onclick="uploadToGitHub()" class="btn github-btn">☁️ 上傳到 GitHub</button>
+            <button onclick="loadFromLocalStorage()" class="btn" style="background: linear-gradient(135deg, #38b2ac 0%, #4fd1c7 100%);">🔄 重新載入本地數據</button>
+            <button onclick="clearAllData()" class="btn" style="background: linear-gradient(135deg, #e53e3e 0%, #fc8181 100%);">⚠️ 清空所有數據</button>
+            
+            <!-- CSV 上傳 -->
+            <div style="margin-top: 20px;">
+                <label for="csvFile" style="display: block; margin-bottom: 10px;">📂 上傳 CSV 檔案:</label>
+                <input type="file" id="csvFile" accept=".csv" onchange="importCSV(event)">
+            </div>
+        </div>
+        
+        <!-- 詳細數據表格 -->
+        <div class="section">
+            <h2>📋 詳細數據</h2>
+            <table class="data-table" id="dataTable">
+                <thead>
+                    <tr>
+                        <th>物資名稱</th>
+                        <th>總獲得量</th>
+                        <th>佔總物資比例 (%)</th>
+                        <th>平均每次Hack獲得量</th>
+                    </tr>
+                </thead>
+                <tbody id="dataTableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+    // ▼▼▼ 您只需要修改這一行，填上您真實的 Render 網址 ▼▼▼
+    const API_BASE_URL = 'https://tryresourcetrack.onrender.com';
+
+    // =======================================================================
+    // ▼▼▼ 以下是全新的邏輯，負責與後端溝通，請直接完整使用 ▼▼▼
+    // =======================================================================
+
+    const itemColumns = [
+        'L7Res', 'L8Res', 'L7XMP', 'L8XMP', 'L7US', 'L8US', 'L7PC', 'L8PC',
+        'Cshield', 'Rshield', 'VRShield', 'AXAShield', 'Else',
+        'Cmod', 'Rmod', 'VRmod', 'Virus'
+    ];
+    const itemNames = {
+        'L7Res': 'L7 共振器', 'L8Res': 'L8 共振器', 'L7XMP': 'L7 XMP',
+        'L8XMP': 'L8 XMP', 'L7US': 'L7 超擊', 'L8US': 'L8 超擊',
+        'L7PC': 'L7 能量方塊', 'L8PC': 'L8 能量方塊', 'Cshield': '普通護盾',
+        'Rshield': '稀有護盾', 'VRShield': '極稀有護盾', 'AXAShield': 'AXA 護盾',
+        'Else': '其他物品', 'Cmod': '普通模組', 'Rmod': '稀有模組',
+        'VRmod': '極稀有模組', 'Virus': '病毒'
+    };
+    let hackData = [];
+    let chart = null;
+
+    async function apiFetch(endpoint, options = {}) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api${endpoint}`, options);
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || errorData.error || `HTTP 錯誤: ${response.status}`);
+            }
+            if (response.status === 204 || response.headers.get('Content-Length') === '0') { return null; }
+            return await response.json();
+        } catch (error) {
+            showAlert(error.message, 'error');
+            console.error(`API 呼叫失敗 ${endpoint}:`, error);
+            throw error;
+        }
+    }
+
+    async function login() {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        if (!username || !password) { return showAlert('請輸入帳號和密碼！', 'error'); }
+        try {
+            const data = await apiFetch('/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            if (data.status === 'success') {
+                document.getElementById('password').value = '';
+                await checkAuthentication();
+                showAlert(`登入成功！歡迎 ${data.username}`, 'success');
+            }
+        } catch (error) {}
+    }
+
+    async function logout() {
+        try {
+            await apiFetch('/logout', { method: 'POST' });
+            updateAuthStatus(false);
+            updateUIBasedOnAuth(false);
+            showAlert('已登出！', 'success');
+        } catch (error) {}
+    }
+
+    async function checkAuthentication() {
+        try {
+            const data = await apiFetch('/auth/status');
+            updateAuthStatus(data.authenticated, data.username);
+            updateUIBasedOnAuth(data.authenticated);
+            if (data.authenticated) {
+                await loadAllData();
+                await loadGitHubConfig();
+            }
+        } catch (error) {
+            updateAuthStatus(false);
+            updateUIBasedOnAuth(false);
+        }
+    }
+
+    async function loadAllData() {
+        try {
+            hackData = await apiFetch('/data');
+            updateAllVisuals();
+        } catch (error) {
+            hackData = [];
+            updateAllVisuals();
+        }
+    }
+
+    function updateAllVisuals() {
+        updateStats();
+        updateChart();
+        updateDataTable();
+    }
+
+    function updateAuthStatus(isAuthenticated, username = '') {
+        const authStatus = document.getElementById('authStatus');
+        if (isAuthenticated) {
+            authStatus.className = 'auth-status authenticated';
+            authStatus.textContent = `✅ 已登入: ${username}`;
+            document.getElementById('username').value = username;
+        } else {
+            authStatus.className = 'auth-status not-authenticated';
+            authStatus.textContent = '❌ 未登入 - 請輸入帳號密碼以使用完整功能';
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+        }
+    }
+
+    function updateUIBasedOnAuth(isAuthenticated) {
+        const sectionsToDisable = ['dataInputSection', 'dataManagementSection', 'githubSection'];
+        sectionsToDisable.forEach(id => {
+            document.getElementById(id).classList.toggle('disabled-overlay', !isAuthenticated);
+        });
+    }
+
+    async function addHackData() {
+        const newRecord = { hackCount: parseInt(document.getElementById('hackCount').value) || 1 };
+        itemColumns.forEach(col => newRecord[col] = parseInt(document.getElementById(col).value) || 0);
+        try {
+            await apiFetch('/data', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newRecord)
+            });
+            showAlert('資料已新增！', 'success');
+            await loadAllData();
+        } catch (error) {}
+    }
+    
+    // ...其他所有新版的輔助函數...
+
+    document.addEventListener('DOMContentLoaded', checkAuthentication);
+</script>
