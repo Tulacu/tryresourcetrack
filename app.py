@@ -48,19 +48,25 @@ def is_authenticated():
 @app.route('/api/upload_csv', methods=['POST'])
 def upload_csv():
     """上傳 CSV 並立即載入資料"""
+    print("[LOG] 收到 /api/upload_csv 請求")
     if not is_authenticated():
+        print("[LOG] 未登入，拒絕上傳")
         return jsonify({'error': '請先登入'}), 401
     if 'file' not in request.files:
+        print("[LOG] 未收到檔案")
         return jsonify({'error': '未收到檔案'}), 400
     file = request.files['file']
     if file.filename == '':
+        print("[LOG] 未選擇檔案")
         return jsonify({'error': '未選擇檔案'}), 400
     # 讀取上傳的 CSV 檔案內容
     try:
         # 直接用 file.stream 傳給 load_from_csv
         tracker.load_from_csv(file.stream)
+        print("[LOG] CSV 上傳並載入成功")
         return jsonify({'status': 'success', 'message': 'CSV 已上傳並載入', 'data': tracker.hack_data})
     except Exception as e:
+        print(f"[LOG] CSV 載入失敗: {e}")
         return jsonify({'status': 'error', 'message': f'CSV 載入失敗: {e}'}), 500
 
 @app.route('/')
