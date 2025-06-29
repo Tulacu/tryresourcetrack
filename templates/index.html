@@ -390,7 +390,20 @@
         }
 
         async function uploadToGitHub() {
-            showAlert('上傳到 GitHub 功能尚未實作', 'warning');
+            try {
+                const res = await fetch('/api/github/upload', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    showAlert('資料已上傳到 GitHub！', 'success');
+                } else {
+                    showAlert('上傳失敗：' + (data.message || ''), 'error');
+                }
+            } catch (e) {
+                showAlert('上傳失敗：' + e, 'error');
+            }
         }
         
         // 初始化
