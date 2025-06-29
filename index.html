@@ -16,7 +16,7 @@
         .input-group { display: flex; flex-direction: column; }
         label { font-weight: bold; margin-bottom: 5px; color: #4a5568; }
         input[type="number"], input[type="text"], input[type="password"] { padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 16px; transition: all 0.3s ease; }
-        input[type="number"]:focus, input[type="text"]:focus, input[type="password"]:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); transform: translateY(-2px); }
+        input[type="number"]:focus, input[type="text"]:focus, input[type="password"]:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
         .btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 15px 30px; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold; transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px; margin-right: 10px; margin-bottom: 10px; }
         .btn:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3); }
         .data-table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08); }
@@ -26,11 +26,26 @@
         .alert-success { background-color: #c6f6d5; color: #22543d; border: 1px solid #9ae6b4; }
         .alert-error { background-color: #fed7d7; color: #742a2a; border: 1px solid #fc8181; }
         .auth-status { padding: 10px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-weight: bold; }
-        .auth-status.authenticated { background-color: #c6f6d5; color: #22543d; border: 1px solid #9ae6b4; }
-        .auth-status.not-authenticated { background-color: #fed7d7; color: #742a2a; border: 1px solid #fc8181; }
-        .disabled-overlay { position: relative; }
-        .disabled-overlay::after { content: '🔒 請先登入以使用此功能'; display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.7); color: #2d3748; place-items: center; font-weight: bold; z-index: 10; border-radius: 15px; font-size: 1.2em; }
-        .disabled-overlay.active::after { display: grid; }
+        .auth-status.authenticated { background-color: #c6f6d5; color: #22543d; }
+        .auth-status.not-authenticated { background-color: #fed7d7; color: #742a2a; }
+        
+        /* ▼▼▼ 最終 CSS 修正處 ▼▼▼ */
+        .content-wrapper { position: relative; transition: opacity 0.3s ease-in-out; }
+        .content-wrapper.locked { opacity: 0.4; pointer-events: none; }
+        .content-wrapper.locked::after {
+            content: '🔒 請先登入以使用此功能';
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.5);
+            color: #2d3748;
+            display: grid;
+            place-items: center;
+            font-weight: bold;
+            z-index: 10;
+            border-radius: 15px;
+            font-size: 1.2em;
+        }
     </style>
 </head>
 <body>
@@ -48,7 +63,7 @@
             <button onclick="logout()" class="btn">🚪 登出</button>
         </div>
         
-        <div class="section disabled-overlay" id="mainContent">
+        <div class="content-wrapper" id="mainContent">
             <div class="section" id="dataInputSection">
                 <h2>📝 新增 Hack 數據</h2>
                 <div class="input-grid">
@@ -76,12 +91,7 @@
             
             <div class="section">
                 <h2>📊 統計摘要</h2>
-                <div class="stats-grid">
-                    <div class="stat-card"><div class="stat-value" id="totalHacks">0</div><div class="stat-label">總 Hack 次數</div></div>
-                    <div class="stat-card"><div class="stat-value" id="totalItems">0</div><div class="stat-label">總物資數量</div></div>
-                    <div class="stat-card"><div class="stat-value" id="avgItemsPerHack">0.00</div><div class="stat-label">平均每次 Hack 物資量</div></div>
-                    <div class="stat-card"><div class="stat-value" id="totalRecords">0</div><div class="stat-label">總記錄筆數</div></div>
-                </div>
+                <div class="stats-grid" id="statsGrid"></div>
             </div>
             
             <div class="section">
@@ -95,11 +105,11 @@
             <div class="section">
                  <h2>⚙️ GitHub 同步設定</h2>
                  <div class="input-grid">
-                    <div class="input-group"><label for="githubRepo">GitHub Repository (例: username/repo)</label><input type="text" id="githubRepo" placeholder="username/repo-name"></div>
+                    <div class="input-group"><label for="githubRepo">GitHub Repository</label><input type="text" id="githubRepo" placeholder="username/repo-name"></div>
                     <div class="input-group"><label for="githubToken">GitHub Personal Access Token</label><input type="password" id="githubToken" placeholder="ghp_..."></div>
                     <div class="input-group"><label for="dataFileName">資料檔案名稱</label><input type="text" id="dataFileName" value="ingress_hack_data.csv"></div>
                  </div>
-                 <button onclick="saveGitHubConfig()" class="btn">💾 儲存 GitHub 設定</button>
+                 <button onclick="saveGitHubConfig()" class="btn">💾 儲存設定</button>
                  <button onclick="syncFromGitHub()" class="btn">🔄 從 GitHub 同步</button>
                  <button onclick="uploadToGitHub()" class="btn">☁️ 上傳到 GitHub</button>
             </div>
@@ -107,9 +117,11 @@
     </div>
 
     <script>
-        console.log('--- 這是 2025/06/29 的最終測試版本 ---');
-        const API_BASE_URL = 'https://tryresourcetrack.onrender.com'; // <-- 請確認這是您正確的網址
+        console.log('--- 這是 2025/06/29 的最終偵錯版本 ---');
 
+        const API_BASE_URL = 'https://tryresourcetrack.onrender.com'; // <-- 請再次確認這是您正確的網址
+
+        // ... 其他常數 itemColumns, itemNames 等保持不變 ...
         const itemColumns = ['L7Res', 'L8Res', 'L7XMP', 'L8XMP', 'L7US', 'L8US', 'L7PC', 'L8PC', 'Cshield', 'Rshield', 'VRShield', 'AXAShield', 'Else', 'Cmod', 'Rmod', 'VRmod', 'Virus'];
         const itemNames = { 'L7Res': 'L7 共振器', 'L8Res': 'L8 共振器', 'L7XMP': 'L7 XMP', 'L8XMP': 'L8 XMP', 'L7US': 'L7 超擊', 'L8US': 'L8 超擊', 'L7PC': 'L7 能量方塊', 'L8PC': 'L8 能量方塊', 'Cshield': '普通護盾', 'Rshield': '稀有護盾', 'VRShield': '極稀有護盾', 'AXAShield': 'AXA 護盾', 'Else': '其他物品', 'Cmod': '普通模組', 'Rmod': '稀有模組', 'VRmod': '極稀有模組', 'Virus': '病毒' };
         let hackData = [];
@@ -127,10 +139,10 @@
 
         async function apiFetch(endpoint, options = {}) {
             try {
-                const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, credentials: 'include' });
                 if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({ message: `HTTP 錯誤: ${response.status}` }));
-                    throw new Error(errorData.message || errorData.error || `HTTP 錯誤: ${response.status}`);
+                    const errorData = await response.json().catch(() => ({ message: `HTTP 錯誤: ${response.status} ${response.statusText}` }));
+                    throw new Error(errorData.message || errorData.error);
                 }
                 if (response.status === 204) return null;
                 return await response.json();
@@ -141,21 +153,30 @@
         }
 
         async function login() {
+            console.log("1. login 函式被觸發");
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
             if (!username || !password) return showAlert('請輸入帳號和密碼！', 'error');
+            
             try {
                 const data = await apiFetch('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, password })
                 });
+                console.log("2. 收到 /api/login 的回應:", data);
+
                 if (data.status === 'success') {
-                    document.getElementById('password').value = '';
                     showAlert(`登入成功！歡迎 ${data.username}`, 'success');
+                    console.log("3. 登入 API 回應成功，準備呼叫 checkAuthentication");
                     await checkAuthentication();
+                    console.log("6. checkAuthentication 已執行完畢");
+                } else {
+                    console.log("登入 API 回應了，但狀態不是 success");
                 }
-            } catch (error) { console.error("Login failed:", error); }
+            } catch (error) { 
+                console.error("Login failed:", error); 
+            }
         }
 
         async function logout() {
@@ -167,8 +188,10 @@
         }
 
         async function checkAuthentication() {
+            console.log("4. checkAuthentication 函式開始執行");
             try {
                 const data = await apiFetch('/api/auth/status');
+                console.log("5. 收到 /api/auth/status 的回應:", data);
                 updateAuthStatus(data.authenticated, data.username);
                 if (data.authenticated) {
                     await loadAllData();
@@ -177,92 +200,49 @@
                     hackData = [];
                     updateAllVisuals();
                 }
-            } catch (error) {
-                updateAuthStatus(false);
+            } catch (error) { 
+                console.log("checkAuthentication 中發生錯誤", error);
+                updateAuthStatus(false); 
             }
+            console.log("checkAuthentication 函式結束");
         }
         
         function updateAuthStatus(isAuthenticated, username = '') {
+            console.log(`- updateAuthStatus 被呼叫，isAuthenticated 狀態為: ${isAuthenticated}`);
             const authStatus = document.getElementById('authStatus');
             const mainContent = document.getElementById('mainContent');
             if (isAuthenticated) {
+                console.log("- 判斷為已登入，準備移除 locked class");
                 authStatus.className = 'auth-status authenticated';
                 authStatus.textContent = `✅ 已登入: ${username}`;
-                mainContent.classList.remove('active');
+                mainContent.classList.remove('locked');
+                console.log("- locked class 已移除，mainContent 現在的 class 是:", mainContent.className);
             } else {
+                console.log("- 判斷為未登入，準備加上 locked class");
                 authStatus.className = 'auth-status not-authenticated';
                 authStatus.textContent = '❌ 未登入';
-                mainContent.classList.add('active');
+                mainContent.classList.add('locked');
+                console.log("- locked class 已加上，mainContent 現在的 class 是:", mainContent.className);
             }
         }
 
-        async function loadAllData() {
-            try {
-                hackData = await apiFetch('/api/data');
-                updateAllVisuals();
-            } catch (error) {
-                hackData = [];
-                updateAllVisuals();
-            }
-        }
-
-        function updateAllVisuals() {
-            updateStats();
-            updateDataTable();
-            // We can add updateChart() here if we want a default chart
-        }
-        
-        async function addHackData() {
-            const newRecord = { hackCount: parseInt(document.getElementById('hackCount').value) || 1 };
-            itemColumns.forEach(col => newRecord[col] = parseInt(document.getElementById(col).value) || 0);
-            try {
-                await apiFetch('/api/data', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newRecord) });
-                showAlert('資料已新增！', 'success');
-                await loadAllData();
-            } catch (error) {}
-        }
-        
-        async function updateStats() {
-            try {
-                const stats = await apiFetch('/api/stats');
-                document.getElementById('totalHacks').textContent = stats.total_hacks || 0;
-                document.getElementById('totalItems').textContent = stats.total_items || 0;
-                document.getElementById('avgItemsPerHack').textContent = (stats.avg_items_per_hack || 0).toFixed(2);
-                document.getElementById('totalRecords').textContent = stats.total_records || 0;
-            } catch (e) {
-                document.getElementById('totalHacks').textContent = 0;
-                document.getElementById('totalItems').textContent = 0;
-                document.getElementById('avgItemsPerHack').textContent = '0.00';
-                document.getElementById('totalRecords').textContent = 0;
-            }
-        }
-        
-
-        function updateDataTable() {
-            const tbody = document.getElementById('dataTableBody');
-            tbody.innerHTML = '';
-            if (!hackData || hackData.length === 0) return;
-            const totalHacks = hackData.reduce((sum, rec) => sum + (rec['hackCount'] || 0), 0);
-            const totalItems = hackData.reduce((sum, rec) => sum + itemColumns.reduce((iSum, col) => iSum + (rec[col] || 0), 0), 0);
-            itemColumns.forEach(column => {
-                const total = hackData.reduce((sum, rec) => sum + (rec[column] || 0), 0);
-                if (total > 0) {
-                    const percentage = totalItems > 0 ? ((total / totalItems) * 100).toFixed(2) : '0.00';
-                    const avgPerHack = totalHacks > 0 ? (total / totalHacks).toFixed(2) : '0.00';
-                    const row = `<tr><td>${itemNames[column]}</td><td>${total}</td><td>${percentage}%</td><td>${avgPerHack}</td></tr>`;
-                    tbody.innerHTML += row;
-                }
-            });
-        }
-        
-        // Add other functions like saveGitHubConfig, syncFromGitHub, etc., here
+        // 其他所有函式 (loadAllData, addHackData, updateStats, etc.) 都保持不變
+        // 為了簡潔，此處省略，但請確保您的檔案中包含它們
+        async function loadAllData() {try {hackData = await apiFetch('/api/data'); updateAllVisuals();} catch (error) {hackData = [];updateAllVisuals();}}
+        function updateAllVisuals() {updateStats();updateDataTable();}
+        async function addHackData() {const newRecord = { hackCount: parseInt(document.getElementById('hackCount').value) || 1 };itemColumns.forEach(col => newRecord[col] = parseInt(document.getElementById(col).value) || 0);try {await apiFetch('/api/data', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newRecord) });showAlert('資料已新增！', 'success');await loadAllData();} catch (error) {}}
+        async function updateStats() {const statsGrid = document.getElementById('statsGrid');if (!hackData || hackData.length === 0) {statsGrid.innerHTML = ''; return;}try {const stats = await apiFetch('/api/stats');statsGrid.innerHTML = `
+    <div class="stat-card"><div class="stat-value">${stats.total_hacks || 0}</div><div class="stat-label">總 Hack 次數</div></div>
+    <div class="stat-card"><div class="stat-value">${stats.total_items || 0}</div><div class="stat-label">總物資數量</div></div>
+    <div class="stat-card"><div class="stat-value">${(stats.avg_items_per_hack || 0).toFixed(2)}</div><div class="stat-label">平均每次 Hack 物資量</div></div>
+    <div class="stat-card"><div class="stat-value">${stats.total_records || 0}</div><div class="stat-label">總記錄筆數</div></div>
+    `;} catch (e) {statsGrid.innerHTML = '';}}
+        function updateDataTable() {const tbody = document.getElementById('dataTableBody');tbody.innerHTML = '';if (!hackData || hackData.length === 0) return;const totalHacks = hackData.reduce((sum, rec) => sum + (rec['hackCount'] || 0), 0);const totalItems = hackData.reduce((sum, rec) => sum + itemColumns.reduce((iSum, col) => iSum + (rec[col] || 0), 0), 0);itemColumns.forEach(column => {const total = hackData.reduce((sum, rec) => sum + (rec[column] || 0), 0);if (total > 0) {const percentage = totalItems > 0 ? ((total / totalItems) * 100).toFixed(2) : '0.00';const avgPerHack = totalHacks > 0 ? (total / totalHacks).toFixed(2) : '0.00';const row = `<tr><td>${itemNames[column]}</td><td>${total}</td><td>${percentage}%</td><td>${avgPerHack}</td></tr>`;tbody.innerHTML += row;}});}
         async function saveGitHubConfig() { showAlert('GitHub 功能待實現', 'warning'); }
         async function syncFromGitHub() { showAlert('GitHub 功能待實現', 'warning'); }
         async function uploadToGitHub() { showAlert('GitHub 功能待實現', 'warning'); }
 
-
         document.addEventListener('DOMContentLoaded', checkAuthentication);
     </script>
-
 </body>
 </html>

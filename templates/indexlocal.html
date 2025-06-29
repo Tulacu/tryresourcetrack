@@ -117,9 +117,11 @@
     </div>
 
     <script>
-        console.log('--- 這是 2025/06/29 的最終測試版本 ---');
-        const API_BASE_URL = 'https://tryresourcetrack.onrender.com'; // <-- 請確認這是您正確的網址
+        console.log('--- 這是 2025/06/29 的最終偵錯版本 ---');
 
+        const API_BASE_URL = 'https://tryresourcetrack.onrender.com'; // <-- 請再次確認這是您正確的網址
+
+        // ... 其他常數 itemColumns, itemNames 等保持不變 ...
         const itemColumns = ['L7Res', 'L8Res', 'L7XMP', 'L8XMP', 'L7US', 'L8US', 'L7PC', 'L8PC', 'Cshield', 'Rshield', 'VRShield', 'AXAShield', 'Else', 'Cmod', 'Rmod', 'VRmod', 'Virus'];
         const itemNames = { 'L7Res': 'L7 共振器', 'L8Res': 'L8 共振器', 'L7XMP': 'L7 XMP', 'L8XMP': 'L8 XMP', 'L7US': 'L7 超擊', 'L8US': 'L8 超擊', 'L7PC': 'L7 能量方塊', 'L8PC': 'L8 能量方塊', 'Cshield': '普通護盾', 'Rshield': '稀有護盾', 'VRShield': '極稀有護盾', 'AXAShield': 'AXA 護盾', 'Else': '其他物品', 'Cmod': '普通模組', 'Rmod': '稀有模組', 'VRmod': '極稀有模組', 'Virus': '病毒' };
         let hackData = [];
@@ -151,20 +153,30 @@
         }
 
         async function login() {
+            console.log("1. login 函式被觸發");
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
             if (!username || !password) return showAlert('請輸入帳號和密碼！', 'error');
+            
             try {
                 const data = await apiFetch('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, password })
                 });
+                console.log("2. 收到 /api/login 的回應:", data);
+
                 if (data.status === 'success') {
                     showAlert(`登入成功！歡迎 ${data.username}`, 'success');
+                    console.log("3. 登入 API 回應成功，準備呼叫 checkAuthentication");
                     await checkAuthentication();
+                    console.log("6. checkAuthentication 已執行完畢");
+                } else {
+                    console.log("登入 API 回應了，但狀態不是 success");
                 }
-            } catch (error) { console.error("Login failed:", error); }
+            } catch (error) { 
+                console.error("Login failed:", error); 
+            }
         }
 
         async function logout() {
@@ -176,8 +188,10 @@
         }
 
         async function checkAuthentication() {
+            console.log("4. checkAuthentication 函式開始執行");
             try {
                 const data = await apiFetch('/api/auth/status');
+                console.log("5. 收到 /api/auth/status 的回應:", data);
                 updateAuthStatus(data.authenticated, data.username);
                 if (data.authenticated) {
                     await loadAllData();
@@ -186,86 +200,44 @@
                     hackData = [];
                     updateAllVisuals();
                 }
-            } catch (error) { updateAuthStatus(false); }
+            } catch (error) { 
+                console.log("checkAuthentication 中發生錯誤", error);
+                updateAuthStatus(false); 
+            }
+            console.log("checkAuthentication 函式結束");
         }
         
-        // ▼▼▼ 最終 JavaScript 修正處 ▼▼▼
         function updateAuthStatus(isAuthenticated, username = '') {
+            console.log(`- updateAuthStatus 被呼叫，isAuthenticated 狀態為: ${isAuthenticated}`);
             const authStatus = document.getElementById('authStatus');
             const mainContent = document.getElementById('mainContent');
             if (isAuthenticated) {
+                console.log("- 判斷為已登入，準備移除 locked class");
                 authStatus.className = 'auth-status authenticated';
                 authStatus.textContent = `✅ 已登入: ${username}`;
                 mainContent.classList.remove('locked');
+                console.log("- locked class 已移除，mainContent 現在的 class 是:", mainContent.className);
             } else {
+                console.log("- 判斷為未登入，準備加上 locked class");
                 authStatus.className = 'auth-status not-authenticated';
                 authStatus.textContent = '❌ 未登入';
                 mainContent.classList.add('locked');
+                console.log("- locked class 已加上，mainContent 現在的 class 是:", mainContent.className);
             }
         }
 
-        async function loadAllData() {
-            try {
-                hackData = await apiFetch('/api/data');
-                updateAllVisuals();
-            } catch (error) {
-                hackData = [];
-                updateAllVisuals();
-            }
-        }
-
-        function updateAllVisuals() {
-            updateStats();
-            updateDataTable();
-        }
-        
-        async function addHackData() {
-            const newRecord = { hackCount: parseInt(document.getElementById('hackCount').value) || 1 };
-            itemColumns.forEach(col => newRecord[col] = parseInt(document.getElementById(col).value) || 0);
-            try {
-                await apiFetch('/api/data', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newRecord) });
-                showAlert('資料已新增！', 'success');
-                await loadAllData();
-            } catch (error) {}
-        }
-        
-        async function updateStats() {
-            const statsGrid = document.getElementById('statsGrid');
-            if (!hackData || hackData.length === 0) {
-                statsGrid.innerHTML = ''; // 清空
-                return;
-            }
-            try {
-                const stats = await apiFetch('/api/stats');
-                statsGrid.innerHTML = `
-                    <div class="stat-card"><div class="stat-value">${stats.total_hacks || 0}</div><div class="stat-label">總 Hack 次數</div></div>
-                    <div class="stat-card"><div class="stat-value">${stats.total_items || 0}</div><div class="stat-label">總物資數量</div></div>
-                    <div class="stat-card"><div class="stat-value">${(stats.avg_items_per_hack || 0).toFixed(2)}</div><div class="stat-label">平均每次 Hack 物資量</div></div>
-                    <div class="stat-card"><div class="stat-value">${stats.total_records || 0}</div><div class="stat-label">總記錄筆數</div></div>
-                `;
-            } catch (e) {
-                statsGrid.innerHTML = '';
-            }
-        }
-        
-
-        function updateDataTable() {
-            const tbody = document.getElementById('dataTableBody');
-            tbody.innerHTML = '';
-            if (!hackData || hackData.length === 0) return;
-            const totalHacks = hackData.reduce((sum, rec) => sum + (rec['hackCount'] || 0), 0);
-            const totalItems = hackData.reduce((sum, rec) => sum + itemColumns.reduce((iSum, col) => iSum + (rec[col] || 0), 0), 0);
-            itemColumns.forEach(column => {
-                const total = hackData.reduce((sum, rec) => sum + (rec[column] || 0), 0);
-                if (total > 0) {
-                    const percentage = totalItems > 0 ? ((total / totalItems) * 100).toFixed(2) : '0.00';
-                    const avgPerHack = totalHacks > 0 ? (total / totalHacks).toFixed(2) : '0.00';
-                    const row = `<tr><td>${itemNames[column]}</td><td>${total}</td><td>${percentage}%</td><td>${avgPerHack}</td></tr>`;
-                    tbody.innerHTML += row;
-                }
-            });
-        }
-        
+        // 其他所有函式 (loadAllData, addHackData, updateStats, etc.) 都保持不變
+        // 為了簡潔，此處省略，但請確保您的檔案中包含它們
+        async function loadAllData() {try {hackData = await apiFetch('/api/data'); updateAllVisuals();} catch (error) {hackData = [];updateAllVisuals();}}
+        function updateAllVisuals() {updateStats();updateDataTable();}
+        async function addHackData() {const newRecord = { hackCount: parseInt(document.getElementById('hackCount').value) || 1 };itemColumns.forEach(col => newRecord[col] = parseInt(document.getElementById(col).value) || 0);try {await apiFetch('/api/data', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newRecord) });showAlert('資料已新增！', 'success');await loadAllData();} catch (error) {}}
+        async function updateStats() {const statsGrid = document.getElementById('statsGrid');if (!hackData || hackData.length === 0) {statsGrid.innerHTML = ''; return;}try {const stats = await apiFetch('/api/stats');statsGrid.innerHTML = `
+    <div class="stat-card"><div class="stat-value">${stats.total_hacks || 0}</div><div class="stat-label">總 Hack 次數</div></div>
+    <div class="stat-card"><div class="stat-value">${stats.total_items || 0}</div><div class="stat-label">總物資數量</div></div>
+    <div class="stat-card"><div class="stat-value">${(stats.avg_items_per_hack || 0).toFixed(2)}</div><div class="stat-label">平均每次 Hack 物資量</div></div>
+    <div class="stat-card"><div class="stat-value">${stats.total_records || 0}</div><div class="stat-label">總記錄筆數</div></div>
+    `;} catch (e) {statsGrid.innerHTML = '';}}
+        function updateDataTable() {const tbody = document.getElementById('dataTableBody');tbody.innerHTML = '';if (!hackData || hackData.length === 0) return;const totalHacks = hackData.reduce((sum, rec) => sum + (rec['hackCount'] || 0), 0);const totalItems = hackData.reduce((sum, rec) => sum + itemColumns.reduce((iSum, col) => iSum + (rec[col] || 0), 0), 0);itemColumns.forEach(column => {const total = hackData.reduce((sum, rec) => sum + (rec[column] || 0), 0);if (total > 0) {const percentage = totalItems > 0 ? ((total / totalItems) * 100).toFixed(2) : '0.00';const avgPerHack = totalHacks > 0 ? (total / totalHacks).toFixed(2) : '0.00';const row = `<tr><td>${itemNames[column]}</td><td>${total}</td><td>${percentage}%</td><td>${avgPerHack}</td></tr>`;tbody.innerHTML += row;}});}
         async function saveGitHubConfig() { showAlert('GitHub 功能待實現', 'warning'); }
         async function syncFromGitHub() { showAlert('GitHub 功能待實現', 'warning'); }
         async function uploadToGitHub() { showAlert('GitHub 功能待實現', 'warning'); }
