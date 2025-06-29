@@ -339,23 +339,21 @@
 
         // 上傳本地 CSV 檔案
         async function uploadLocalCSV() {
+            alert('uploadLocalCSV called');
             const fileInput = document.getElementById('csvFile');
             if (!fileInput.files || fileInput.files.length === 0) {
                 showAlert('請先選擇要上傳的 CSV 檔案', 'error');
                 return;
             }
-            
             const file = fileInput.files[0];
             const formData = new FormData();
             formData.append('file', file);
-            
             try {
                 const response = await fetch(`${API_BASE_URL}/api/upload_csv`, {
                     method: 'POST',
                     body: formData,
                     credentials: 'include'
                 });
-                
                 const data = await response.json();
                 if (response.ok && data.status === 'success') {
                     showAlert('CSV 已成功上傳並載入', 'success');
@@ -369,6 +367,7 @@
                 console.error('Upload CSV failed:', error);
             }
         }
+        window.uploadLocalCSV = uploadLocalCSV;
         
         // GitHub 設定相關功能
         async function loadGitHubConfig() {
