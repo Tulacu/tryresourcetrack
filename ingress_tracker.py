@@ -20,6 +20,54 @@ import requests
 import base64
 
 class IngressHackTracker:
+    def plot_item_ratio_per_hack(self, save_path: str = "static/item_ratio_per_hack.png"):
+        """
+        繪製各物資在每次 hack 中的比例圖（圓餅圖）
+        """
+        if not self.hack_data:
+            print("⚠️ 沒有資料可以繪圖！")
+            return
+        # 計算所有物資的總獲得量
+        total_items = sum(
+            sum(record.get(column, 0) for column in self.item_columns)
+            for record in self.hack_data
+        )
+        # 計算各物資的總獲得量
+        item_totals = {col: sum(record.get(col, 0) for record in self.hack_data) for col in self.item_columns}
+        # 計算各物資在所有 hack 中的比例
+        labels = [self.item_names.get(col, col) for col in self.item_columns if item_totals[col] > 0]
+        sizes = [item_totals[col] / total_items * 100 for col in self.item_columns if item_totals[col] > 0]
+        # 畫圓餅圖
+        plt.figure(figsize=(10, 8))
+        plt.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=140)
+        plt.title('各物資在所有 Hack 中的比例')
+        plt.axis('equal')
+        plt.tight_layout()
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        print(f"📊 物資比例圖已儲存為 {save_path}")
+        plt.show()
+
+    def plot_total_items_per_hack(self, save_path: str = "static/total_items_per_hack.png"):
+        """
+        繪製每次 hack 拿到物資總數的分布圖（直方圖）
+        """
+        if not self.hack_data:
+            print("⚠️ 沒有資料可以繪圖！")
+            return
+        # 計算每次 hack 拿到的物資總數
+        total_items_per_hack = [
+            sum(record.get(col, 0) for col in self.item_columns) / int(record.get('hackCount', 1) or 1)
+            for record in self.hack_data if int(record.get('hackCount', 1) or 1) > 0
+        ]
+        plt.figure(figsize=(10, 6))
+        plt.hist(total_items_per_hack, bins=15, color='skyblue', edgecolor='navy', alpha=0.7)
+        plt.xlabel('每次 Hack 拿到的物資數量')
+        plt.ylabel('次數')
+        plt.title('每次 Hack 拿到物資數量的分布')
+        plt.tight_layout()
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        print(f"📊 每次 Hack 物資分布圖已儲存為 {save_path}")
+        plt.show()
     def load_from_csv(self, file_stream) -> int:
         """
         從檔案流匯入 CSV 資料，回傳成功匯入的筆數，並自動轉換成 UTF-8
