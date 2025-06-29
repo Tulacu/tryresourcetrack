@@ -15,8 +15,8 @@
         .input-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 25px; }
         .input-group { display: flex; flex-direction: column; }
         label { font-weight: bold; margin-bottom: 5px; color: #4a5568; }
-        input[type="number"], input[type="text"], input[type="password"] { padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 16px; transition: all 0.3s ease; }
-        input[type="number"]:focus, input[type="text"]:focus, input[type="password"]:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
+        input[type="number"], input[type="text"], input[type="password"], input[type="file"] { padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 16px; transition: all 0.3s ease; }
+        input[type="number"]:focus, input[type="text"]:focus, input[type="password"]:focus, input[type="file"]:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
         .btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 15px 30px; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold; transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px; margin-right: 10px; margin-bottom: 10px; }
         .btn:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3); }
         .data-table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08); }
@@ -25,11 +25,11 @@
         .alert { padding: 15px; margin: 20px 0; border-radius: 8px; font-weight: bold; position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
         .alert-success { background-color: #c6f6d5; color: #22543d; border: 1px solid #9ae6b4; }
         .alert-error { background-color: #fed7d7; color: #742a2a; border: 1px solid #fc8181; }
+        .alert-warning { background-color: #fef7cd; color: #744210; border: 1px solid #f6e05e; }
         .auth-status { padding: 10px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-weight: bold; }
         .auth-status.authenticated { background-color: #c6f6d5; color: #22543d; }
         .auth-status.not-authenticated { background-color: #fed7d7; color: #742a2a; }
         
-        /* ▼▼▼ 最終 CSS 修正處 ▼▼▼ */
         .content-wrapper { position: relative; transition: opacity 0.3s ease-in-out; }
         .content-wrapper.locked { opacity: 0.4; pointer-events: none; }
         .content-wrapper.locked::after {
@@ -45,6 +45,33 @@
             z-index: 10;
             border-radius: 15px;
             font-size: 1.2em;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
         }
     </style>
 </head>
@@ -112,6 +139,7 @@
                 </div>
                 <button onclick="uploadLocalCSV()" class="btn">📤 上傳並載入 CSV</button>
             </div>
+
             <div class="section">
                  <h2>⚙️ GitHub 同步設定</h2>
                  <div class="input-grid">
@@ -123,19 +151,23 @@
                  <button onclick="syncFromGitHub()" class="btn">🔄 從 GitHub 同步</button>
                  <button onclick="uploadToGitHub()" class="btn">☁️ 上傳到 GitHub</button>
             </div>
-
         </div>
     </div>
 
     <script>
-        // ...existing code...
-        const API_BASE_URL = 'https://tryresourcetrack.onrender.com'; // <-- 請確認這是您正確的網址
-
+        // 全域變數
+        const API_BASE_URL = 'https://tryresourcetrack.onrender.com';
         const itemColumns = ['L7Res', 'L8Res', 'L7XMP', 'L8XMP', 'L7US', 'L8US', 'L7PC', 'L8PC', 'Cshield', 'Rshield', 'VRShield', 'AXAShield', 'Else', 'Cmod', 'Rmod', 'VRmod', 'Virus'];
-        const itemNames = { 'L7Res': 'L7 共振器', 'L8Res': 'L8 共振器', 'L7XMP': 'L7 XMP', 'L8XMP': 'L8 XMP', 'L7US': 'L7 超擊', 'L8US': 'L8 超擊', 'L7PC': 'L7 能量方塊', 'L8PC': 'L8 能量方塊', 'Cshield': '普通護盾', 'Rshield': '稀有護盾', 'VRShield': '極稀有護盾', 'AXAShield': 'AXA 護盾', 'Else': '其他物品', 'Cmod': '普通模組', 'Rmod': '稀有模組', 'VRmod': '極稀有模組', 'Virus': '病毒' };
+        const itemNames = { 
+            'L7Res': 'L7 共振器', 'L8Res': 'L8 共振器', 'L7XMP': 'L7 XMP', 'L8XMP': 'L8 XMP', 
+            'L7US': 'L7 超擊', 'L8US': 'L8 超擊', 'L7PC': 'L7 能量方塊', 'L8PC': 'L8 能量方塊', 
+            'Cshield': '普通護盾', 'Rshield': '稀有護盾', 'VRShield': '極稀有護盾', 'AXAShield': 'AXA 護盾', 
+            'Else': '其他物品', 'Cmod': '普通模組', 'Rmod': '稀有模組', 'VRmod': '極稀有模組', 'Virus': '病毒' 
+        };
         let hackData = [];
         let chart = null;
 
+        // 顯示提示訊息
         function showAlert(message, type) {
             const existingAlert = document.querySelector('.alert');
             if (existingAlert) existingAlert.remove();
@@ -146,6 +178,7 @@
             setTimeout(() => { if (alert.parentNode) alert.remove(); }, 4000);
         }
 
+        // API 請求封裝
         async function apiFetch(endpoint, options = {}) {
             try {
                 const response = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, credentials: 'include' });
@@ -161,6 +194,7 @@
             }
         }
 
+        // 登入功能
         async function login() {
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
@@ -173,33 +207,35 @@
                 });
                 if (data.status === 'success') {
                     showAlert(`登入成功！歡迎 ${data.username}`, 'success');
-                    // 直接更新狀態，不要馬上 call checkAuthentication
                     updateAuthStatus(true, data.username);
                     await loadAllData();
                     await loadGitHubConfig();
                 }
-            } catch (error) { console.error("Login failed:", error); }
+            } catch (error) { 
+                console.error("Login failed:", error); 
+            }
         }
 
+        // 登出功能
         async function logout() {
             try {
                 await apiFetch('/api/logout', { method: 'POST' });
                 showAlert('已登出！', 'success');
                 await checkAuthentication();
-            } catch (error) { console.error("Logout failed:", error); }
+            } catch (error) { 
+                console.error("Logout failed:", error); 
+            }
         }
         
-        // ▼▼▼ 邏輯修正處 ▼▼▼
+        // 檢查認證狀態
         async function checkAuthentication() {
             try {
                 const data = await apiFetch('/api/auth/status');
                 updateAuthStatus(data.authenticated, data.username);
                 if (data.authenticated) {
-                    // 只有在確認登入後，才去載入所有數據
                     await loadAllData();
                     await loadGitHubConfig();
                 } else {
-                    // 如果未登入，就清空本地數據並重繪畫面 (此時不會發出新的API請求)
                     hackData = [];
                     updateAllVisuals();
                 }
@@ -210,6 +246,7 @@
             }
         }
         
+        // 更新認證狀態
         function updateAuthStatus(isAuthenticated, username = '') {
             console.log('updateAuthStatus called', isAuthenticated, username);
             const authStatus = document.getElementById('authStatus');
@@ -225,36 +262,45 @@
             }
         }
 
+        // 載入所有數據
         async function loadAllData() {
             try {
-                hackData = await apiFetch('/api/data'); // 獲取主要數據
-                updateAllVisuals(); // 用獲取到的數據來更新畫面
+                hackData = await apiFetch('/api/data');
+                updateAllVisuals();
             } catch (error) {
                 hackData = [];
                 updateAllVisuals();
             }
         }
 
+        // 更新所有視覺元素
         function updateAllVisuals() {
-            updateStats(); // 這個函式現在不會發出 API 請求
+            updateStats();
             updateDataTable();
         }
         
+        // 新增 Hack 數據
         async function addHackData() {
             const newRecord = { hackCount: parseInt(document.getElementById('hackCount').value) || 1 };
             itemColumns.forEach(col => newRecord[col] = parseInt(document.getElementById(col).value) || 0);
             try {
-                await apiFetch('/api/data', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newRecord) });
+                await apiFetch('/api/data', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify(newRecord) 
+                });
                 showAlert('資料已新增！', 'success');
                 await loadAllData();
-            } catch (error) {}
+            } catch (error) {
+                console.error('Add hack data failed:', error);
+            }
         }
         
-        // ▼▼▼ 邏輯修正處 ▼▼▼
+        // 更新統計資料
         function updateStats() {
             const statsGrid = document.getElementById('statsGrid');
-            if (!hackData) { // 基本的防錯
-                statsGrid.innerHTML = '';
+            if (!hackData || hackData.length === 0) {
+                statsGrid.innerHTML = '<div class="stat-card"><div class="stat-value">0</div><div class="stat-label">尚無數據</div></div>';
                 return;
             }
 
@@ -271,12 +317,15 @@
             `;
         }
         
+        // 更新數據表格
         function updateDataTable() {
             const tbody = document.getElementById('dataTableBody');
             tbody.innerHTML = '';
             if (!hackData || hackData.length === 0) return;
+            
             const totalHacks = hackData.reduce((sum, rec) => sum + (rec['hackCount'] || 0), 0);
             const totalItems = hackData.reduce((sum, rec) => sum + itemColumns.reduce((iSum, col) => iSum + (rec[col] || 0), 0), 0);
+            
             itemColumns.forEach(column => {
                 const total = hackData.reduce((sum, rec) => sum + (rec[column] || 0), 0);
                 if (total > 0) {
@@ -287,28 +336,57 @@
                 }
             });
         }
+
+        // 上傳本地 CSV 檔案
+        async function uploadLocalCSV() {
+            alert('uploadLocalCSV called');
+            const fileInput = document.getElementById('csvFile');
+            if (!fileInput.files || fileInput.files.length === 0) {
+                showAlert('請先選擇要上傳的 CSV 檔案', 'error');
+                return;
+            }
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/upload_csv`, {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                if (response.ok && data.status === 'success') {
+                    showAlert('CSV 已成功上傳並載入', 'success');
+                    hackData = data.data;
+                    updateAllVisuals();
+                } else {
+                    showAlert(data.message || 'CSV 上傳失敗', 'error');
+                }
+            } catch (error) {
+                showAlert('CSV 上傳失敗: ' + error.message, 'error');
+                console.error('Upload CSV failed:', error);
+            }
+        }
+        window.uploadLocalCSV = uploadLocalCSV;
         
-        // 省略其他 GitHub 相關的輔助函式...
+        // GitHub 設定相關功能
         async function loadGitHubConfig() {
             showAlert('GitHub 設定載入功能尚未實作', 'warning');
-            // TODO: 實作 GitHub 設定載入
         }
 
         async function saveGitHubConfig() {
             showAlert('GitHub 設定儲存功能尚未實作', 'warning');
-            // TODO: 實作 GitHub 設定儲存
         }
 
         async function syncFromGitHub() {
             showAlert('從 GitHub 同步功能尚未實作', 'warning');
-            // TODO: 實作從 GitHub 同步資料
         }
 
         async function uploadToGitHub() {
             showAlert('上傳到 GitHub 功能尚未實作', 'warning');
-            // TODO: 實作上傳資料到 GitHub
         }
         
+        // 初始化
         document.addEventListener('DOMContentLoaded', checkAuthentication);
     </script>
 </body>
