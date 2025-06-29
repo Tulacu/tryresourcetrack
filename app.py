@@ -10,6 +10,10 @@ from ingress_tracker import IngressHackTracker
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24) 
 
+# ▼▼▼ 加入這兩行，來設定跨網域 Cookie 的規則 ▼▼▼
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+app.config['SESSION_COOKIE_SECURE'] = True
+# ============================================
 # ▼▼▼ 請將您的 CORS 設定暫時修改成這一行 ▼▼▼
 CORS(app, supports_credentials=True)
 
