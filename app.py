@@ -25,7 +25,7 @@ app.config['SESSION_COOKIE_SECURE'] = True
 
 # (3) 門禁系統，指定誰可以進來 (必要的)
 # 告訴伺服器只接受來自您 GitHub Pages 網站的請求
-CORS(app, origins="https://tulacu.github.io", supports_credentials=True)
+CORS(app, origins=["https://tulacu.github.io"], supports_credentials=True, allow_headers="*")
 
 # 創建一個全域的 tracker 實例。在真實的多人應用中，你可能需要為每個用戶管理數據。
 # 但根據原始腳本的設計，這是一個共享的追蹤器。
